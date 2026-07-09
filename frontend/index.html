@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extração Automática Zuora</title>
+    <style>
+        :root {
+            --bg: #f4f6f8;
+            --surface: #ffffff;
+            --text: #1a2332;
+            --muted: #5c6b7a;
+            --accent: #0b5fff;
+            --accent-hover: #0847c4;
+            --border: #d8e0ea;
+            --success: #0f7b4d;
+            --error: #b42318;
+            --warning: #9a6700;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: linear-gradient(160deg, #eef3f9 0%, #f8fafc 45%, #edf2f7 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .page {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 2.5rem 1.25rem 3rem;
+        }
+
+        header {
+            margin-bottom: 1.75rem;
+        }
+
+        header h1 {
+            margin: 0 0 0.5rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 24px rgba(26, 35, 50, 0.06);
+        }
+
+        .field {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 0.7rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: #fff;
+        }
+
+        input:focus,
+        select:focus {
+            outline: 2px solid rgba(11, 95, 255, 0.25);
+            border-color: var(--accent);
+        }
+
+        .periodos {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            max-height: 220px;
+            overflow-y: auto;
+            background: #fafbfd;
+        }
+
+        .periodo-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            padding: 0.45rem 0.25rem;
+        }
+
+        .periodo-item input {
+            margin-top: 0.2rem;
+        }
+
+        .periodo-item span {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .periodo-dates {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease, opacity 0.15s ease;
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: #e8edf3;
+            color: var(--text);
+        }
+
+        .status-panel {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .status-panel.visible {
+            display: block;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .badge-pending,
+        .badge-running {
+            background: #fff4d6;
+            color: var(--warning);
+        }
+
+        .badge-done {
+            background: #dff5ea;
+            color: var(--success);
+        }
+
+        .badge-error {
+            background: #fde8e6;
+            color: var(--error);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e8edf3;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 0.75rem 0 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .status-message {
+            color: var(--muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .error-box {
+            margin-top: 1rem;
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            background: #fde8e6;
+            color: var(--error);
+            display: none;
+        }
+
+        .error-box.visible {
+            display: block;
+        }
+
+        .downloads {
+            margin-top: 1.25rem;
+        }
+
+        .downloads h3 {
+            margin: 0 0 0.75rem;
+            font-size: 1rem;
+        }
+
+        .download-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .download-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        .download-list a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .download-list a:hover {
+            text-decoration: underline;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 0.35rem;
+        }
+
+        @media (max-width: 600px) {
+            .page {
+                padding-top: 1.5rem;
+            }
+
+            header h1 {
+                font-size: 1.45rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <h1>Extração Automática Zuora</h1>
+            <p>Preencha suas credenciais, escolha os períodos e inicie a extração. Não é necessário rodar Python no seu computador.</p>
+        </header>
+
+        <div class="card">
+            <form id="scraping-form">
+                <div class="field">
+                    <label for="username">Usuário Zuora</label>
+                    <input type="text" id="username" name="username" autocomplete="username" required>
+                </div>
+
+                <div class="field">
+                    <label for="password">Senha Zuora</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                </div>
+
+                <div class="field">
+                    <label for="filial">Filial</label>
+                    <select id="filial" name="filial" required></select>
+                </div>
+
+                <div class="field">
+                    <label>Períodos</label>
+                    <div class="actions" style="margin-top: 0; margin-bottom: 0.5rem;">
+                        <button type="button" class="btn-secondary" id="select-all">Selecionar todos</button>
+                        <button type="button" class="btn-secondary" id="clear-all">Limpar seleção</button>
+                    </div>
+                    <div class="periodos" id="periodos-list"></div>
+                    <p class="hint">Marque os relatórios que deseja extrair.</p>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn-primary" id="submit-btn">Iniciar extração</button>
+                </div>
+            </form>
+
+            <div class="error-box" id="form-error"></div>
+        </div>
+
+        <div class="card status-panel" id="status-panel">
+            <div class="status-header">
+                <h2 style="margin: 0; font-size: 1.1rem;">Status da extração</h2>
+                <span class="badge badge-pending" id="status-badge">Aguardando</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <p class="status-message" id="status-message">Preparando...</p>
+
+            <div class="downloads" id="downloads" hidden>
+                <h3>Arquivos prontos para download</h3>
+                <ul class="download-list" id="download-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById("scraping-form");
+        const submitBtn = document.getElementById("submit-btn");
+        const formError = document.getElementById("form-error");
+        const statusPanel = document.getElementById("status-panel");
+        const statusBadge = document.getElementById("status-badge");
+        const statusMessage = document.getElementById("status-message");
+        const progressFill = document.getElementById("progress-fill");
+        const downloadsSection = document.getElementById("downloads");
+        const downloadList = document.getElementById("download-list");
+        const periodosList = document.getElementById("periodos-list");
+        const filialSelect = document.getElementById("filial");
+
+        let currentJobId = null;
+        let pollTimer = null;
+
+        function showFormError(message) {
+            formError.textContent = message;
+            formError.classList.add("visible");
+        }
+
+        function hideFormError() {
+            formError.textContent = "";
+            formError.classList.remove("visible");
+        }
+
+        function setSubmitting(isSubmitting) {
+            submitBtn.disabled = isSubmitting;
+            submitBtn.textContent = isSubmitting ? "Iniciando..." : "Iniciar extração";
+        }
+
+        function statusLabel(status) {
+            const labels = {
+                pending: "Na fila",
+                running: "Em andamento",
+                done: "Concluído",
+                error: "Erro",
+            };
+            return labels[status] || status;
+        }
+
+        function updateStatusUI(status) {
+            statusPanel.classList.add("visible");
+
+            const badgeClass = `badge badge-${status.status}`;
+            statusBadge.className = badgeClass;
+            statusBadge.textContent = statusLabel(status.status);
+            statusMessage.textContent = status.message || "Processando...";
+
+            const total = status.total || 0;
+            const current = status.current || 0;
+            const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+            progressFill.style.width = `${percent}%`;
+
+            if (status.status === "done" && status.files && status.files.length > 0) {
+                renderDownloads(status.files);
+                setSubmitting(false);
+            }
+
+            if (status.status === "error") {
+                showFormError(status.error || status.message || "Ocorreu um erro na extração.");
+                setSubmitting(false);
+            }
+
+            if (status.status === "running" || status.status === "pending") {
+                setSubmitting(true);
+            }
+        }
+
+        function renderDownloads(files) {
+            downloadList.innerHTML = "";
+            files.forEach((filename) => {
+                const li = document.createElement("li");
+                const link = document.createElement("a");
+                link.href = `/api/jobs/${currentJobId}/download/${encodeURIComponent(filename)}`;
+                link.textContent = filename;
+                link.setAttribute("download", filename);
+                li.appendChild(link);
+                downloadList.appendChild(li);
+            });
+            downloadsSection.hidden = files.length === 0;
+        }
+
+        async function pollStatus() {
+            if (!currentJobId) return;
+
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}/status`);
+                if (!response.ok) return;
+
+                const status = await response.json();
+                updateStatusUI(status);
+
+                if (status.status === "done" || status.status === "error") {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                }
+            } catch (error) {
+                console.error("Erro ao consultar status:", error);
+            }
+        }
+
+        function startPolling(jobId) {
+            currentJobId = jobId;
+            hideFormError();
+            statusPanel.classList.add("visible");
+            downloadsSection.hidden = true;
+            downloadList.innerHTML = "";
+
+            if (pollTimer) clearInterval(pollTimer);
+            pollStatus();
+            pollTimer = setInterval(pollStatus, 3000);
+        }
+
+        async function loadConfig() {
+            const response = await fetch("/api/config");
+            const config = await response.json();
+
+            filialSelect.innerHTML = "";
+            config.filiais.forEach((filial) => {
+                const option = document.createElement("option");
+                option.value = filial.value;
+                option.textContent = filial.label;
+                filialSelect.appendChild(option);
+            });
+
+            periodosList.innerHTML = "";
+            Object.entries(config.periodos).forEach(([nome, datas]) => {
+                const label = document.createElement("label");
+                label.className = "periodo-item";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.name = "periodos";
+                checkbox.value = nome;
+                checkbox.checked = nome === "Relatório 1" || nome === "Relatório 2";
+
+                const text = document.createElement("span");
+                text.innerHTML = `${nome}<br><span class="periodo-dates">${datas[0]} até ${datas[1]}</span>`;
+
+                label.appendChild(checkbox);
+                label.appendChild(text);
+                periodosList.appendChild(label);
+            });
+        }
+
+        document.getElementById("select-all").addEventListener("click", () => {
+            periodosList.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                cb.checked = true;
+            });
+        });
+
+        document.getElementById("clear-all").addEventListener("click", () => {
+            periodosList.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                cb.checked = false;
+            });
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            hideFormError();
+
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value;
+            const filial = filialSelect.value;
+            const periodos = Array.from(
+                periodosList.querySelectorAll('input[type="checkbox"]:checked')
+            ).map((cb) => cb.value);
+
+            if (periodos.length === 0) {
+                showFormError("Selecione ao menos um período.");
+                return;
+            }
+
+            setSubmitting(true);
+
+            try {
+                const response = await fetch("/api/jobs", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password, filial, periodos }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showFormError(data.error || "Não foi possível iniciar a extração.");
+                    setSubmitting(false);
+                    return;
+                }
+
+                startPolling(data.job_id);
+            } catch (error) {
+                showFormError("Erro de conexão com o servidor. Verifique se o app está rodando.");
+                setSubmitting(false);
+            }
+        });
+
+        async function checkActiveJob() {
+            try {
+                const response = await fetch("/api/jobs/active");
+                const data = await response.json();
+
+                if (data.active && data.job_id) {
+                    startPolling(data.job_id);
+                } else if (data.last_job_id && data.status && data.status.status === "done") {
+                    currentJobId = data.last_job_id;
+                    updateStatusUI(data.status);
+                }
+            } catch (error) {
+                console.error("Erro ao verificar job ativo:", error);
+            }
+        }
+
+        loadConfig().then(checkActiveJob);
+    </script>
+</body>
+</html>
